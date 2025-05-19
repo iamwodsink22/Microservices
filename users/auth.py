@@ -79,10 +79,28 @@ def register_user(new_user:UserRegister,db=Depends(get_db))->dict:
         db.add(user_obj)
         db.commit()
         db.close()
+        return {'detail':'User added successfully','user':new_user}
     except:
         raise HTTPException(status_code=500,detail="Cannot add the user")
     
-
+@user_router.patch('/change_pw')
+def change_password(user:PasswordChange,db=Depends(get_db))->dict:
+    try:
+        cur_user=db.query(Users).where(Users.id==user.id).one()
+        if not cur_user:
+            raise HTTPException(status_code=404,detail="user not present")
+            
+        cur_user.password=crypt_context.hash(user.password)
+        db.commit()
+        db.close()
+        return {'status':True,'detail':'Password Changed Successfully'}
+    except:
+        raise HTTPException(status_code=500,detail="Cannot add the user")
+        
+        
+        
+        
+        
         
         
     
