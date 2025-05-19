@@ -3,7 +3,7 @@ from fastapi import APIRouter,Depends, HTTPException,Response
 from users.model import Users,get_db
 from sqlalchemy.inspection import inspect
 from passlib.context import CryptContext
-from users.schemas import UserAuth
+from users.schemas import *
 import datetime
 import jwt
 
@@ -29,8 +29,8 @@ def get_user(id:int,db=Depends(get_db))->dict:
         user=db.query(Users).where(Users.id==id).one()
         if not user:
             raise HTTPException(status_code=404,detail="No user found")
-        else:
-            return {'user':to_dict(user)}
+        db.close()
+        return {'user':to_dict(user)}
     except:
             raise HTTPException(status_code=500,detail="Something went wrong")
         
@@ -45,6 +45,8 @@ def auth_user(user:UserAuth,db=Depends(get_db),response=Response)->dict:
             token=create_access_token(to_dict(user))
             
             response.set_cookie(key='access_token',value=token,expires=datetime.timedelta(minutes=60),httponly=True,secure=True)
+            
+            db.close()
             return {'user':to_dict(user)}
             
     except:
@@ -60,6 +62,30 @@ def get_current_user(token:str=Depends(oauth2_scheme)):
                 
     except:
         raise HTTPException(status_code=500,detail="JWT Exception")
+    
+@user_router.post('/register')
+def register_user(new_user:UserRegister,db=Depends(get_db))->dict:
+    try:
+        user_present=db.query(Users).where(Users.email==new_user.email).one()
+        if user_present:
+            raise HTTPException(status_code=409,detail="user already present")
+        hashed_pw=crypt_context.hash(new_user.password)
+        new_user={
+            'email':new_user.email,
+            'password':hashed_pw,
+            'name':new_user.name
+        }
+        user_obj=Users(**new_user)
+        db.add(user_obj)
+        db.commit()
+        db.close()
+    except:
+        raise HTTPException(status_code=500,detail="Cannot add the user")
+    
+
+        
+        
+    
 
             
             
