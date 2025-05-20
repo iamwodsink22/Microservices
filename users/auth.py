@@ -41,13 +41,18 @@ def auth_user(user:UserAuth,db=Depends(get_db),response=Response)->dict:
         if not user:
             raise HTTPException(status_code=404,detail="Email not registered")
         verified=crypt_context.verify(user.password,db_user.password)
-        if verified:
-            token=create_access_token(to_dict(user))
+        if not verified:
+            raise HTTPException(status_code=401,detail="Password not matched")
             
-            response.set_cookie(key='access_token',value=token,expires=datetime.timedelta(minutes=60),httponly=True,secure=True)
-            
-            db.close()
-            return {'user':to_dict(user)}
+        token=create_access_token(to_dict(user))
+        
+        response.set_cookie(key='access_token',value=token,expires=datetime.timedelta(minutes=60),httponly=True,secure=True)
+        if db_user.is_superadmin:
+            response.set_cookie(key="is_superadmin",value="true",expires=datetime.timedelta(minutes=60),httponly=True,secure=True)
+        else:
+            response.delete_cookie(key="is_superadmin")
+        db.close()
+        return {'user':to_dict(user)}
             
     except:
             raise HTTPException(status_code=500,detail="Something went wrong")
@@ -96,6 +101,20 @@ def change_password(user:PasswordChange,db=Depends(get_db))->dict:
         return {'status':True,'detail':'Password Changed Successfully'}
     except:
         raise HTTPException(status_code=500,detail="Cannot add the user")
+    
+    
+def require_role(role:int):
+    def role_checker(user=Depends(get_current_user)):
+        if user.role_id==role or user.is_superadmin:
+            return user
+        else:
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have permission to access this resource"
+            )
+        return user
+    return role_checker
+        
         
         
         

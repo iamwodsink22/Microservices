@@ -1,5 +1,5 @@
 from database import get_db,Base
-from sqlalchemy import Column,Integer,DateTime,func, String
+from sqlalchemy import Column,Integer,DateTime,func, String,text,Boolean
 from sqlalchemy.orm import declarative_mixin
 
 @declarative_mixin
@@ -13,5 +13,7 @@ class Users(BaseMixin,Base):
     name=Column(String(20),nullable=True)
     email=Column(String(20),nullable=False)
     password=Column(String,nullable=False)
+    role_id=Column(int,nullable=False,default=1,server_default=text("1"))
+    is_superadmin=Column(Boolean,defaukt=False,server_default=text("false"))
     
     
