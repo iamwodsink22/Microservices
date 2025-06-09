@@ -12,6 +12,7 @@ class Users(Base,BaseMixin):
     __tablename__='users'
     name=Column(String(50),nullable=True)
     email=Column(String(50),nullable=False)
+    phone=Column(Integer,nullable=False)
     password=Column(String,nullable=False)
     role_id=Column(Integer,nullable=False,default=1,server_default=text("1"))
     is_superadmin=Column(Boolean,default=False,server_default=text("false"))
